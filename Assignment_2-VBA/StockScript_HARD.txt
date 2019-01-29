@@ -1,0 +1,155 @@
+Attribute VB_Name = "Module1"
+Option Compare Text
+'added compare text option above to compare text in ticker values
+
+Sub Stocks_HARD()
+'Includes everything from moderate challenge
+'Displays the stock with the "Greatest % increase", "Greatest % Decrease", and "Greatest total volume"
+    
+
+'Define variables
+Dim TotalVol As LongLong
+Dim YrChange As Double
+Dim PctChange As Double
+Dim OpenVal As Double
+Dim CloseVal As Double
+Dim ws As Worksheet
+
+'Loop through each Worksheet
+For Each ws In Worksheets
+    'Select current worksheet
+    ws.Select
+    
+    '*Grab data from first table and populate 2nd table*
+        'Populate Headers for Summary Table
+        Range("I1").Value = "Ticker"
+        Range("J1").Value = "Yearly Change"
+        Range("K1").Value = "Percent Change"
+        Range("L1").Value = "Total Stock Volume"
+        
+        'Assign LastRow of stock data for each sheet
+        LastRow = Cells(Rows.Count, 1).End(xlUp).Row
+        
+        'Assign next empty row for new table
+        NextRTable = 2
+    
+        'Loop through each non-empty row of data
+        For i = 2 To LastRow
+         
+            'Check if stock data row contains new ticker value
+            If Cells(i, 1).Value <> Cells(i - 1, 1).Value Then
+                'Grab ticker value and populate in summary table
+                Cells(NextRTable, 9).Value = Cells(i, 1).Value
+                'Grab and store opening value for the stock as variable OpenVal
+                OpenVal = Cells(i, 3).Value
+                'Set initial value for the stock's total volume
+                TotalVol = Cells(i, 7).Value
+                
+            'If data row is the last row for a stock AND OpenVal is 0
+            ElseIf Cells(i, 1).Value <> Cells(i + 1, 1).Value And OpenVal = 0 Then
+                'Grab and store closing value for stock as CloseVal
+                CloseVal = Cells(i, 6).Value
+                'Calculate yearly change and populate summary table
+                YrChange = CloseVal - OpenVal
+                Cells(NextRTable, 10).Value = YrChange
+                'Since OpenVal is 0, then PctChange cannot be divided by 0
+                Cells(NextRTable, 11).Value = ""
+                NextRTable = NextRTable + 1
+                'Add last value for the stock to total volume and populate summary table
+                TotalVol = TotalVol + Cells(i, 7).Value
+                Cells((NextRTable), 12).Value = TotalVol
+                'Reset next empty row value for summary table
+                
+            'For other last rows
+             ElseIf Cells(i, 1).Value <> Cells(i + 1, 1).Value Then
+                'Grab and store closing value for stock as CloseVal
+                CloseVal = Cells(i, 6).Value
+                'Calculate yearly change and populate summary table
+                YrChange = CloseVal - OpenVal
+                Cells(NextRTable, 10).Value = YrChange
+                'Calculate percent change and populate summary table with percent format
+                PctChange = YrChange / OpenVal
+                Cells(NextRTable, 11).Value = Format(PctChange, "0.00%")
+                'Add last value for the stock to total volume and populate summary table
+                TotalVol = TotalVol + Cells(i, 7).Value
+                Cells((NextRTable), 12).Value = TotalVol
+                'Reset next empty row value for summary table
+                NextRTable = NextRTable + 1
+            
+            'For all other rows...
+            Else
+                'Add current row's volume value to total volume calculation
+                TotalVol = TotalVol + Cells(i, 7).Value
+            End If
+        Next i
+    
+    '*Conditional Format of Yearly Change in 2nd table*
+        'Determine last row for 2nd table
+        LastRow2 = Cells(Rows.Count, 9).End(xlUp).Row
+        
+        For j = 2 To LastRow2
+            'Highlight cell with red if negative, otherwise highlight cell with green
+            If Cells(j, 10).Value < 0 Then
+                Cells(j, 10).Interior.ColorIndex = 3
+            Else
+                Cells(j, 10).Interior.ColorIndex = 4
+            End If
+                 
+        Next j
+    
+    
+    '**Set up and Populate Table 3**
+        'Define new variables
+         Dim PctMax As Double
+         Dim PctMin As Double
+         Dim VolMax As LongLong
+         Dim Ticker(0 To 2) As String
+         
+            'Populate Table Row and Column Headers
+            Range("O2").Value = "Greatest % Increase"
+            Range("O3").Value = "Greatest % Decrease"
+            Range("O4").Value = "Greatest Total Volume"
+            Range("P1").Value = "Ticker"
+            Range("Q1").Value = "Value"
+            
+            'Set initial values for variables
+            PctMax = 0
+            PctMin = 0
+            VolMax = 0
+            
+            'Go through each row in 2nd table to calculate and store min or max values
+            For k = 2 To LastRow2
+                
+                If Cells(k, 11).Value > PctMax Then
+                    PctMax = Cells(k, 11).Value
+                    Ticker(0) = Cells(k, 9).Value
+                ElseIf Cells(k, 11).Value < PctMin Then
+                    PctMin = Cells(k, 11).Value
+                    Ticker(1) = Cells(k, 9).Value
+                End If
+                
+                If Cells(k, 11).Value > VolMax Then
+                    VolMax = Cells(k, 12).Value
+                    Ticker(2) = Cells(k, 9).Value
+                End If
+            
+            Next k
+            
+            'Populate calculated values into table 3
+            Range("P2").Value = Ticker(0)
+            Range("P3").Value = Ticker(1)
+            Range("P4").Value = Ticker(2)
+            Range("Q2").Value = PctMax
+            Range("Q3").Value = PctMin
+            Range("Q4").Value = VolMax
+     
+            
+        'Autofit column width for new tables
+        Columns("I:Q").AutoFit
+    
+    MsgBox ("Worksheet done!")
+    
+Next
+
+End Sub
+
